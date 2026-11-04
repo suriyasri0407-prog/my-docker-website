@@ -1,0 +1,36 @@
+pipeline {
+    agent any
+
+    triggers {
+        pollSCM('H/2 * * * *')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                bat 'docker build -t my-docker-website .'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                bat 'docker run --rm my-docker-website nginx -t'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                powershell '''
+                    docker rm -f my-website 2>$null
+                    docker run -d -p 8081:80 --name my-website my-docker-website
+                '''
+            }
+        }
+    }
+}
